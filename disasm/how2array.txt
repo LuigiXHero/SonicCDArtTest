@@ -1,0 +1,11 @@
+ok so each zone is a slot in the 2D array and each eact is a slot for each zone slot
+the first thing we need to do is calculate the pointer of the zone slot, since its the primary array
+so each zone slot includes 4  pointers
+thats 16 bytes
+so u would have to move the zone id into d0 and multiply it by 16
+now we can move on to the acts
+each act slot is a longword
+what we can do is move the act id into d1 or something and multiply it by 4
+and then add to d0
+and thats ur final value
+and then do the normal lea or movea thing and ur good to go
