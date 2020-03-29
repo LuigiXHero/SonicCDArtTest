@@ -25462,6 +25462,8 @@ loc_12FEA:
 		move.w	d0,$14(a0)
 
 loc_12FEE:
+		tst.b	$39(a0) 	;Peelout
+		bne.s	loc_1300C 	;Peelout
 		move.b	$26(a0),d0
 		jsr	(CalcSine).l
 		muls.w	$14(a0),d1

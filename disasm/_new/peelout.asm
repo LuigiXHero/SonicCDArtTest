@@ -1,6 +1,12 @@
-;Sonic_Dash:
+; ---------------------------------------------------------------------------
+; Subroutine to make Sonic perform a peelout
+; ---------------------------------------------------------------------------
+; If you use this makes sure to search for ;Peelout in Sonic1.asm
+; ||||||||||||||| S U B	R O U T	I N E |||||||||||||||||||||||||||||||||||||||
+
+;SCDPeelout:
 		btst	#1,$39(a0)
-		bne.s	Sonic_DashLaunch
+		bne.s	SCDPeelout_Launch
 		cmpi.b	#7,$1C(a0) ;check to see if your looking up
 		bne.s	@return
 		move.b	($FFFFF603).w,d0
@@ -9,9 +15,12 @@
 		move.b	#1,$1C(a0)
 		move.w	#0,$3A(a0)
 		move.w	#$D2,d0
-		jsr		(PlaySound_Special).l ; Play peelout charge sound
+		jsr		(PlaySound_Special).l 	; Play peelout charge sound
+	;	sfx 	sfx_PeeloutCharge 		; These are if you use AMPS
 		addq.l	#4,sp
 		bset	#1,$39(a0)
+		
+		clr.w	$14(a0)
  
 		bsr.w	Sonic_LevelBound
 		bsr.w	Sonic_AnglePos
@@ -20,17 +29,15 @@
 		rts	
 ; ---------------------------------------------------------------------------
  
-Sonic_DashLaunch:
-		move.b	#$20,$1C(a0) ;charging peelout animation (walking to running to peelout sprites)
+SCDPeelout_Launch:
 		move.b	($FFFFF602).w,d0
 		btst	#0,d0
-		bne.w	Sonic_DashCharge
+		bne.w	SCDPeelout_Charge
 		bclr	#1,$39(a0)	; stop Dashing
 		cmpi.b	#$1E,$3A(a0)	; have we been charging long enough?
-		bne.s	Sonic_Dash_Stop_Sound
+		bne.s	SCDPeelout_Stop_Sound
 		move.b	#0,$1C(a0)	; launches here (peelout sprites)
 		move.w	#1,$10(a0)	; force X speed to nonzero for camera lag's benefit
-		move.w	#$0C00,$14(a0)	;Set sonic's speed
 		move.w	$14(a0),d0
 		subi.w	#$800,d0
 		add.w	d0,d0
@@ -43,26 +50,42 @@ Sonic_DashLaunch:
 		neg.w	$14(a0)
  
 @dontflip:
-		;bset	#2,$22(a0)
 		bclr	#7,$22(a0)
-		move.w	#$D3,d0
-		jsr		(PlaySound_Special).l
 		move.w	#$D4,d0
 		jsr		(PlaySound_Special).l
-		bra.w	Sonic_DashResetScr
+	;	sfx 	sfx_PeeloutRelease
+		bra.w	SCDPeelout_ResetScr
 ; ---------------------------------------------------------------------------
  
-Sonic_DashCharge:				; If still charging the dash...
+SCDPeelout_Charge:				; If still charging the dash...
+		move.w	($FFFFF760).w,d1	; get top peelout speed
+		move.w	d1,d2
+		add.w	d1,d1
+		tst.b   ($FFFFFE2E).w 		; test for speed shoes
+		beq.s	@noshoes
+		asr.w	#1,d2
+		sub.w	d2,d1
+
+@noshoes:
+		addi.w	#$64,$14(a0)		; increment speed
+		cmp.w	$14(a0),d1
+		bgt.s	@inctimer
+		move.w	d1,$14(a0)
+
+@inctimer:
+		addq.b	#1,$3A(a0)		; increment timer
 		cmpi.b	#$1E,$3A(a0)
-		beq.s	Sonic_DashResetScr
-		addi.b	#1,$3A(a0)
-		jmp 	Sonic_DashResetScr
+		bcs.s	SCDPeelout_ResetScr
+		move.b	#$1E,$3A(a0)
+		jmp 	SCDPeelout_ResetScr
 		
-Sonic_Dash_Stop_Sound:
+SCDPeelout_Stop_Sound:
 		move.w	#$D3,d0
 		jsr		(PlaySound_Special).l
+	;	sfx 	sfx_PeeloutStop
+		clr.w	$14(a0)
 
-Sonic_DashResetScr:
+SCDPeelout_ResetScr:
 		addq.l	#4,sp			; increase stack ptr ; was 4
 		cmpi.w	#$60,($FFFFF73E).w
 		beq.s	@finish
